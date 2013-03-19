@@ -17,8 +17,8 @@ let cocoaInit() =
 let getPDF (file: string) : PdfDocument =
     new PdfDocument(NSUrl.FromFilename(file))
 
-let setPDF (file: string) (data: NSData) : bool = 
-    (new PdfDocument(data)).Write(file)
+let setPDF (file: string) (document: PdfDocument) : bool = 
+    (new PdfDocument(document.GetDataRepresentation())).Write(file)
 
 let pdfPages (doc: PdfDocument) : List<PdfPage> = 
     List.init doc.PageCount (doc.GetPage)
@@ -79,3 +79,5 @@ let removeAnnotation (page: PdfPage) annotation =
     page.RemoveAnnotation(annotation)
 
 let indexForPage (page: PdfPage) = page.Document.GetPageIndex(page)
+let pageForAnnotation (annotation: PdfAnnotationLink) = annotation.Page
+let documentForAnnotation (annotation: PdfAnnotationLink) = pageForAnnotation(annotation).Document

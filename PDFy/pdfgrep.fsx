@@ -9,7 +9,7 @@
 open System
 
 let args = System.Environment.GetCommandLineArgs() 
-if args.Length < 6 then failwith (sprintf "%s requires 2 arguments, pdffile and search string" __SOURCE_FILE__)
+if args.Length < 6 then failwith (sprintf "%s requires 2 arguments, pdffile and search regex" __SOURCE_FILE__)
 
 let filename, searchterm = (args.[4], args.[5])
 

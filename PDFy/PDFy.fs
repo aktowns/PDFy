@@ -1,6 +1,7 @@
 module PDFy
 
 open System
+open System.Text.RegularExpressions
 open System.Threading
 open System.Drawing
 open MonoMac
@@ -48,11 +49,20 @@ let annotationsNamed name (annos: List<PdfAnnotationLink>) : List<PdfAnnotationL
 let annotationsStartingWith name (annos: List<PdfAnnotationLink>) : List<PdfAnnotationLink> =
     annos |> List.filter(fun annotation -> annotation.Url.AbsoluteString.StartsWith(name))
 
+let annotationsMatchingRegex (regex: Regex) (annos: List<PdfAnnotationLink>) : List<PdfAnnotationLink> =
+    annos |> List.filter(fun annotation -> regex.IsMatch(annotation.Url.AbsoluteString))
+    
 let findLinkAnnotationsNamed search = 
     findLinkAnnotations >> annotationsNamed search
 
 let findLinkAnnotationsStartingWith term = 
     findLinkAnnotations >> annotationsStartingWith term
+
+let findLinkAnnotationsMatchingRegex regex =
+    findLinkAnnotations >> annotationsMatchingRegex regex
+
+let findLinkAnnotationsMatchingRegex' regexStr =
+    findLinkAnnotations >> annotationsMatchingRegex (new Regex(regexStr))
 
 let createAnnotation (content: string) rect =
     let x, y, width, height = rect

@@ -16,6 +16,6 @@ let filename, searchterm = (args.[4], args.[5])
 PDFy.cocoaInit()
 
 PDFy.getPDFAnnotations filename
-|> PDFy.findLinkAnnotationsNamed searchterm
+|> PDFy.findLinkAnnotationsMatchingRegex' searchterm
 |> List.iter(fun x -> 
     printfn "Found: Page: %i with %s on %s" (PDFy.indexForPage x.Page) (x.Url.AbsoluteString) filename)

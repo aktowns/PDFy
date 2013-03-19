@@ -22,8 +22,15 @@ let setPDF (file: string) (data: NSData) : bool =
 let pdfPages (doc: PdfDocument) : List<PdfPage> = 
     List.init doc.PageCount (doc.GetPage)
 
+let getPDFPages = getPDF >> pdfPages
+
 let pdfAnnotations (page: PdfPage) : List<PdfAnnotation>  =  
     page.Annotations |> List.ofArray
+
+let getPDFAnnotations (file: string) = 
+    getPDFPages file
+    |> List.map(pdfAnnotations)
+    |> List.concat
 
 let tryDowncastLinkAnnotation (anno: PdfAnnotation) : option<PdfAnnotationLink> =
     try Some((anno :?> PdfAnnotationLink)) with | _ -> None
@@ -35,11 +42,17 @@ let renameAnnotationDestination (newname: string) (annotation: PdfAnnotationLink
     annotation.Url <- new NSUrl(newname)
     annotation
 
-let findAnnotationsNamed name (annos: List<PdfAnnotationLink>) : List<PdfAnnotationLink> =
+let annotationsNamed name (annos: List<PdfAnnotationLink>) : List<PdfAnnotationLink> =
     annos |> List.filter(fun annotation -> annotation.Url.AbsoluteString = name)
 
-let findAnnotationsStartingWith name (annos: List<PdfAnnotationLink>) : List<PdfAnnotationLink> =
+let annotationsStartingWith name (annos: List<PdfAnnotationLink>) : List<PdfAnnotationLink> =
     annos |> List.filter(fun annotation -> annotation.Url.AbsoluteString.StartsWith(name))
+
+let findLinkAnnotationsNamed search = 
+    findLinkAnnotations >> annotationsNamed search
+
+let findLinkAnnotationsStartingWith term = 
+    findLinkAnnotations >> annotationsStartingWith term
 
 let createAnnotation (content: string) rect =
     let x, y, width, height = rect

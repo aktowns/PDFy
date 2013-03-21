@@ -133,7 +133,9 @@ module PDFPage =
 [<AutoOpen>]
 module PDFDocument =                                                                    
     let openDocument (file: string) = 
-        new PdfDocument(NSUrl.FromFilename(file))
+        if IO.File.Exists(file) then 
+            new PdfDocument(NSUrl.FromFilename(file)) 
+        else failwithf "Failed to open file %s" file
     
     let saveDocument (file: string) (document: PdfDocument) : bool =
         (new PdfDocument(document.GetDataRepresentation())).Write(file)    

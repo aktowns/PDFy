@@ -1,12 +1,24 @@
 # PDFy
 WIP, some small utils for dealing with pdfs in f# using PDFKit   
 
+### Example
+
+to read all annotations, filter hotspots named `Title1` and print  
+```fsharp
+cocoaInit()
+
+(openDocument >> getAnnotationsFromDocument) "test.pdf"
+|> List.filter(PDFAnnotation.isHotspot) |> List.filter(PDFAnnotation.hotspotRegex (new Regex("^Title1$")))
+|> List.iter (fun x -> printfn "Found: Page: %i with %s on %s." (x.index) (x.hotspot) filename)
+```
+
+
 ### Scripts
 inside the PDFy directory theres two scripts, pdfgrep.fsx and pdfreplace.fsx   
 
 pdfgrep accepts a filename and regex and returns the results per page of hits, ie
 ```shell
-Ξ Projects/PDFy git:(master) ▶ PDFy/pdfgrep.fsx ~/Desktop/wah.pdf ".*"
+PDFy/pdfgrep.fsx ~/Desktop/wah.pdf ".*"
 Found: Page: 0 with OtherStoryImage1 on /Users/ashleyis/Desktop/wah.pdf
 Found: Page: 0 with OtherStoryImage2 on /Users/ashleyis/Desktop/wah.pdf
 Found: Page: 0 with OtherStoryImage3 on /Users/ashleyis/Desktop/wah.pdf
@@ -35,6 +47,6 @@ Found: Page: 0 with goto,section+2,transition=SlideCoverFromRight on /Users/ashl
 
 pdfreplace accepts a input filename, output filename, a search term and the replacement string and returns the results of replaced items, ie
 ```shell
-Ξ Projects/PDFy git:(master) ▶ PDFy/pdfreplace.fsx ~/Desktop/wah.pdf test.pdf OtherStoryTitle1 OtherStoryBigTitle1
+PDFy/pdfreplace.fsx ~/Desktop/wah.pdf test.pdf OtherStoryTitle1 OtherStoryBigTitle1
 Replaced: OtherStoryTitle1 with OtherStoryBigTitle1 on page 0 of /Users/ashleyis/Desktop/wah.pdf
 ```

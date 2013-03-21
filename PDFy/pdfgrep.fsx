@@ -7,15 +7,17 @@
 #r "PDFy.dll"
 
 open System
+open System.Text.RegularExpressions
+open PDFy
 
-let args = System.Environment.GetCommandLineArgs() 
-if args.Length < 6 then failwith (sprintf "%s requires 2 arguments, pdffile and search regex" __SOURCE_FILE__)
+let filename, searchterm = 
+    let args = System.Environment.GetCommandLineArgs() 
+    if args.Length < 6 then failwith (sprintf "%s requires 2 arguments, pdffile and search regex" __SOURCE_FILE__)
+    (args.[4], args.[5])
 
-let filename, searchterm = (args.[4], args.[5])
+cocoaInit()
 
-PDFy.cocoaInit()
-
-PDFy.getPDFAnnotations filename
-|> PDFy.findLinkAnnotationsMatchingRegex' searchterm
-|> List.iter(fun x -> 
-    printfn "Found: Page: %i with %s on %s" (PDFy.indexForPage x.Page) (x.Url.AbsoluteString) filename)
+(openDocument >> getAnnotationsFromDocument) filename
+|> List.filter(PDFAnnotation.isHotspot)
+|> List.filter(PDFAnnotation.hotspotRegex (new Regex(searchterm)))
+|> List.iter (fun x -> printfn "Found: Page: %i with %s on %s." (x.index) (x.hotspot) filename)

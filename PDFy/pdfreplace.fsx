@@ -7,21 +7,22 @@
 #r "PDFy.dll"
 
 open System
+open PDFy
 
-let args = System.Environment.GetCommandLineArgs() 
-if args.Length < 6 then 
-    failwith (sprintf "%s requires 4 arguments, pdffile, outputfile, search string and a replace string" __SOURCE_FILE__)
+let filename, output, searchterm, replacewith = 
+    let args = System.Environment.GetCommandLineArgs() 
+    if args.Length < 6 then 
+        failwith (sprintf "%s requires 4 arguments, pdffile, outputfile, search string and a replace string" __SOURCE_FILE__)
+    (args.[4], args.[5], args.[6], args.[7])
 
-let filename, output, searchterm, replacewith = (args.[4], args.[5], args.[6], args.[7])
+cocoaInit()
 
-PDFy.cocoaInit()
-
-PDFy.getPDFAnnotations filename
-|> PDFy.findLinkAnnotationsNamed searchterm
-|> List.map(PDFy.renameAnnotationDestination replacewith)
-|> List.map(fun x ->
-    printfn "Replaced: %s with %s on page %i of %s" searchterm replacewith (PDFy.indexForPage x.Page) filename
-    PDFy.documentForAnnotation x)
-|> Seq.distinct
-|> Seq.head
-|> PDFy.setPDF output
+(openDocument >> getAnnotationsFromDocument) filename
+|> List.filter(PDFAnnotation.isHotspot)
+|> List.filter(PDFAnnotation.hotspotNamed searchterm)
+|> List.map(fun annotation -> 
+    annotation.hotspot <- replacewith
+    printfn "Replaced: %s with %s on page %i of %s" searchterm replacewith annotation.index filename
+    annotation.document)
+|> List.head
+|> saveDocument output

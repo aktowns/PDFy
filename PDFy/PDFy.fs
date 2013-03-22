@@ -2,7 +2,11 @@ module PDFy
 
 open Microsoft.FSharp.Reflection
 open System
+open System.IO
+open System.Text
 open System.Text.RegularExpressions
+open System.Runtime.Serialization
+open System.Runtime.Serialization.Json
 open System.Threading
 open System.Drawing
 open MonoMac
@@ -16,7 +20,12 @@ let cocoaInit() =
     let thread = new Thread(new ThreadStart(fun () -> NSRunLoop.Current.Run() ))
     thread.Start()
 
-type HotspotSize = { x: float32; y: float32; width: float32; height: float32 }
+type HotspotSize = { 
+    x: float32; 
+    y: float32; 
+    width: float32; 
+    height: float32 
+}
 
 type PDFAnnotation =
     | Annotation of PdfAnnotation
@@ -113,10 +122,8 @@ type PDFAnnotation =
         member this.hotspotRegex' regex = PDFAnnotation.hotspotRegex regex this
         
         static member hotspotNamed (name: string) (annotation: PDFAnnotation) = annotation.hotspot = name
-        static member hotspotRegex (regex: Regex) (annotation: PDFAnnotation) = regex.IsMatch(annotation.hotspot)
-        
-            
-            
+        static member hotspotRegex (regex: Regex) (annotation: PDFAnnotation) = regex.IsMatch(annotation.hotspot) 
+
 [<AutoOpen>]
 module PDFPage =
     let getAnnotationsFromPage (page: PdfPage) = 
@@ -159,3 +166,91 @@ module PDFDocument =
         getAnnotationsFromDocument doc 
         |> List.filter(PDFAnnotation.isHotspot)
         |> List.filter(search)
+
+module JSONUtils =
+    [<DataContract(Name = "PDFAnnotation")>]
+    type JSONHotspot = {
+        [<DataMember>]
+        mutable Size: HotspotSize;
+        [<DataMember>]
+        mutable Hotspot: string;
+    }
+
+    [<DataContract(Name = "PDFPage")>]
+    type JSONPage = {
+        [<DataMember>]
+        mutable Index: int;
+        [<DataMember>]
+        mutable Hotspots: JSONHotspot[];
+        [<DataMember>]
+        mutable Size: HotspotSize;
+    }
+    
+    [<DataContract(Name = "PDFDocument")>]
+    type JSONDocument = {
+        [<DataMember>]
+        mutable Pages: JSONPage[];
+    }
+    
+    let internal json<'t> (myObj: 't) =   
+        use ms = new MemoryStream() 
+        (new DataContractJsonSerializer(typeof<'t>)).WriteObject(ms, myObj) 
+        Encoding.Default.GetString(ms.ToArray())  
+
+    let internal unjson<'t> (jsonString: string) : 't =  
+        use ms = new MemoryStream(Encoding.Default.GetBytes(jsonString)) 
+        let obj = (new DataContractJsonSerializer(typeof<'t>)).ReadObject(ms) 
+        obj :?> 't
+
+    let definePage page = 
+        let annotations = 
+            getAnnotationsFromPage page
+            |> List.filter(PDFAnnotation.isHotspot)
+            |> List.map(fun x -> {Size = x.size; Hotspot = x.hotspot})
+            |> List.toArray
+        let size = 
+            let rect = page.GetBoundsForBox(PdfDisplayBox.Media)
+            { x = rect.X; y = rect.Y; width = rect.Width; height = rect.Height }
+        {
+            Index = (indexForPage page);
+            Hotspots = annotations;
+            Size = size;
+        }
+
+    let retrievePage jsonpage =
+        let rect = new RectangleF(jsonpage.Size.x, jsonpage.Size.y, jsonpage.Size.width, jsonpage.Size.height)
+        
+        let page = new PdfPage()
+        page.SetBoundsForBox(rect, PdfDisplayBox.Media)
+        jsonpage.Hotspots
+        |> List.ofArray
+        |> List.iter(fun hotspot -> 
+            let annotationRect = new RectangleF(hotspot.Size.x, hotspot.Size.y, hotspot.Size.width, hotspot.Size.height)
+            let annotation = new PdfAnnotationLink()
+            annotation.Bounds <- annotationRect
+            annotation.Url <- (new NSUrl(hotspot.Hotspot))
+            page.AddAnnotation(annotation))
+        page
+
+    let pageToJSON page = json<JSONPage> (definePage page)
+    let pageFromJSON str = retrievePage (unjson<JSONPage> str)
+        
+    let documentToJSON document : string =
+        let pages = 
+            getPages document 
+            |> List.map(definePage)
+            |> List.toArray
+            
+        json<JSONDocument> {
+            Pages = pages;
+        }
+        
+    let documentFromJSON str =
+        let arr = unjson<JSONDocument> str
+        let doc = new PdfDocument()
+        arr.Pages 
+        |> List.ofArray
+        |> List.map(fun x -> ((retrievePage x), x.Index)) 
+        |> List.iter(doc.InsertPage)
+        doc
+        

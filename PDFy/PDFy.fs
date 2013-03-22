@@ -168,28 +168,25 @@ module PDFDocument =
         |> List.filter(search)
 
 module JSONUtils =
+    [<CLIMutable>]
     [<DataContract(Name = "PDFAnnotation")>]
     type JSONHotspot = {
-        [<DataMember>]
-        mutable Size: HotspotSize;
-        [<DataMember>]
-        mutable Hotspot: string;
+        [<DataMember>] Size: HotspotSize;
+        [<DataMember>] Hotspot: string;
     }
 
+    [<CLIMutable>]
     [<DataContract(Name = "PDFPage")>]
     type JSONPage = {
-        [<DataMember>]
-        mutable Index: int;
-        [<DataMember>]
-        mutable Hotspots: JSONHotspot[];
-        [<DataMember>]
-        mutable Size: HotspotSize;
+        [<DataMember>] Index: int;
+        [<DataMember>] Hotspots: JSONHotspot[];
+        [<DataMember>] Size: HotspotSize;
     }
     
+    [<CLIMutable>]
     [<DataContract(Name = "PDFDocument")>]
     type JSONDocument = {
-        [<DataMember>]
-        mutable Pages: JSONPage[];
+        [<DataMember>] Pages: JSONPage[];
     }
     
     let internal json<'t> (myObj: 't) =   

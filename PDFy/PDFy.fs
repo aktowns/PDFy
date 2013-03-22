@@ -147,3 +147,15 @@ module PDFDocument =
         getPages document 
         |> List.map(getAnnotationsFromPage)
         |> List.concat
+        
+    let searchForAnnotations (str: string) (doc: PdfDocument) =
+        let search = PDFAnnotation.hotspotNamed str
+        getAnnotationsFromDocument doc 
+        |> List.filter(PDFAnnotation.isHotspot)
+        |> List.filter(search)
+    
+    let searchForAnnotationsWithRegex (regex: Regex) (doc: PdfDocument) =
+        let search = PDFAnnotation.hotspotRegex regex
+        getAnnotationsFromDocument doc 
+        |> List.filter(PDFAnnotation.isHotspot)
+        |> List.filter(search)

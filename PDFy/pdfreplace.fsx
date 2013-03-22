@@ -17,9 +17,7 @@ let filename, output, searchterm, replacewith =
 
 cocoaInit()
 
-(openDocument >> getAnnotationsFromDocument) filename
-|> List.filter(PDFAnnotation.isHotspot)
-|> List.filter(PDFAnnotation.hotspotNamed searchterm)
+(openDocument >> searchForAnnotations searchterm) filename
 |> List.map(fun annotation -> 
     annotation.hotspot <- replacewith
     printfn "Replaced: %s with %s on page %i of %s" searchterm replacewith annotation.index filename

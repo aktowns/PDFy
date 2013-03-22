@@ -17,7 +17,5 @@ let filename, searchterm =
 
 cocoaInit()
 
-(openDocument >> getAnnotationsFromDocument) filename
-|> List.filter(PDFAnnotation.isHotspot)
-|> List.filter(PDFAnnotation.hotspotRegex (new Regex(searchterm)))
+(openDocument >> searchForAnnotationsWithRegex (new Regex(searchterm))) filename
 |> List.iter (fun x -> printfn "Found: Page: %i with %s on %s." (x.index) (x.hotspot) filename)

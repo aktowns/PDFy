@@ -8,10 +8,21 @@ to read all annotations, filter hotspots named `Title1` and print
 cocoaInit()
 
 (openDocument >> getAnnotationsFromDocument) "test.pdf"
-|> List.filter(PDFAnnotation.isHotspot) |> List.filter(PDFAnnotation.hotspotRegex (new Regex("^Title1$")))
-|> List.iter (fun x -> printfn "Found: Page: %i with %s on %s." (x.index) (x.hotspot) filename)
+|> List.filter(PDFAnnotation.isHotspot) 
+|> List.filter(PDFAnnotation.hotspotRegex (new Regex("^Title1$")))
+|> List.iter (fun x -> printfn "Found: Page: %i with %s on test.pdf." (x.index) (x.hotspot))
 ```
 
+to rename a set of hotspots 
+```fsharp
+(openDocument >> searchForAnnotations searchterm) "test.pdf"
+|> List.map(fun annotation -> 
+    annotation.hotspot <- replacewith
+    printfn "Replaced: %s with %s on page %i of test.pdf" searchterm replacewith annotation.index
+    annotation.document)
+|> List.head
+|> saveDocument output
+```
 
 ### Scripts
 inside the PDFy directory theres two scripts, pdfgrep.fsx and pdfreplace.fsx   
